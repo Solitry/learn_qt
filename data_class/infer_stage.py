@@ -71,7 +71,7 @@ class InferStage:
     tiles: Dict[str, Tile] = field(default_factory=dict)
 
     def load_from_file(self, path: str) -> None:
-        with open(path, "r") as f:
+        with open(path, "r", encoding='gb18030') as f:
             data = toml.load(f)
 
         for item in data["AsmTile"]:

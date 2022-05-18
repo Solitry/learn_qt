@@ -18,7 +18,7 @@ class TextStage:
     config: Dict[str, str] = field(default_factory=dict)
 
     def load_from_file(self, path: str) -> None:
-        with open(path, "r") as f:
+        with open(path, "r", encoding='gb18030') as f:
             content = f.read()
 
         parts = content.split("---")
