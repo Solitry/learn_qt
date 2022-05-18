@@ -1,5 +1,6 @@
 from PySide2.QtCore import Signal, QRectF, QPointF
 from PySide2.QtWidgets import QWidget, QHBoxLayout, QGraphicsScene
+from typing import List, Union, Tuple
 
 from gui_class.chess_board import ChessBoard
 from gui_class.fixed_graphics_view import FixedGraphicsView
@@ -7,8 +8,9 @@ from gui_class.reason_graphics_item import ReasonGraphicsItem
 from gui_class.clue_graphics_item import ClueGraphicsItem
 from gui_class.assume_graphics_item import AssumeGraphicsItem
 
+from data_class.text_stage import TextStage
 from data_class.infer_stage import InferStage
-from data_class.records import Records, InferMemo
+from data_class.records import TextMemo, InferMemo
 
 
 class InferWidget(QWidget):
@@ -45,7 +47,7 @@ class InferWidget(QWidget):
     def clue_drop(self, scene_pos: QPointF):
         for item in self.main_scene.items(scene_pos):
             if isinstance(item, ReasonGraphicsItem):
-                item.enter_stage(1)
+                item.enter_status(1)
 
-    # def reload(self, infer_stage: InferStage, stage_info: List[]):
-    #     pass
+    def reload(self, stage_info_list: List[Union[Tuple[TextStage, TextMemo], Tuple[InferStage, InferMemo]]]):
+        pass

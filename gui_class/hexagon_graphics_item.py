@@ -8,15 +8,15 @@ from typing import Optional, List, Tuple
 class HexagonGraphicsItem(QGraphicsPolygonItem):
     def __init__(self,
                  radius: float,
-                 stages: List[Tuple[QColor, QColor, Optional[str]]],
+                 status_list: List[Tuple[QColor, QColor, Optional[str]]],
                  pos: QPointF = QPointF(0, 0),
-                 init_stage: int = 0,
+                 init_status: int = 0,
                  parent=None
                  ):
         super().__init__(parent)
 
         self.radius = radius
-        self.stages = stages
+        self.status_list = status_list
 
         polygon = QPolygonF()
         for deg in range(0, 360, 60):
@@ -28,17 +28,17 @@ class HexagonGraphicsItem(QGraphicsPolygonItem):
 
         self.description = None  # type: Optional[QGraphicsTextItem]
 
-        self.stage = init_stage
-        self.enter_stage(init_stage)
+        self.status = init_status
+        self.enter_status(init_status)
 
         self.setPos(pos)
 
-    def get_stage(self) -> int:
-        return self.stage
+    def get_status(self) -> int:
+        return self.status
 
-    def enter_stage(self, stage):
+    def enter_status(self, idx):
         pen = QPen()
-        pen.setColor(self.stages[stage][0])
+        pen.setColor(self.status_list[idx][0])
         pen.setStyle(Qt.SolidLine)
         pen.setCapStyle(Qt.RoundCap)
         pen.setJoinStyle(Qt.RoundJoin)
@@ -46,7 +46,7 @@ class HexagonGraphicsItem(QGraphicsPolygonItem):
         self.setPen(pen)
 
         brush = QBrush()
-        brush.setColor(self.stages[stage][1])
+        brush.setColor(self.status_list[idx][1])
         brush.setStyle(Qt.SolidPattern)
         self.setBrush(brush)
 
@@ -54,9 +54,9 @@ class HexagonGraphicsItem(QGraphicsPolygonItem):
             self.description.deleteLater()
             self.description = None
 
-        if self.stages[stage][2] is not None:
-            self.description = QGraphicsTextItem(self.stages[stage][2], self)
+        if self.status_list[idx][2] is not None:
+            self.description = QGraphicsTextItem(self.status_list[idx][2], self)
             self.description.setTextWidth(2 * self.radius)
             self.description.setPos(-self.description.boundingRect().center())
 
-        self.stage = stage
+        self.status = idx
