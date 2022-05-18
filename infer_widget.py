@@ -1,4 +1,4 @@
-from PySide2.QtCore import Signal, QRectF, QPointF
+from PySide2.QtCore import Qt, Signal, QRectF, QPointF
 from PySide2.QtWidgets import QWidget, QHBoxLayout, QGraphicsScene, QGraphicsRectItem, QGraphicsItem
 from PySide2.QtGui import QPen, QBrush, QColor
 
@@ -27,11 +27,21 @@ class ChessBoard(QGraphicsRectItem):
         self.setFlags(QGraphicsItem.ItemIsMovable)
         self.setZValue(0)
 
-        self.setPen(QPen(QColor("#00000000")))  # transparent
-        self.setBrush(QBrush(QColor("#00000000")))  # transparent
+        self.setPen(Qt.NoPen)  # transparent
+        self.setBrush(Qt.NoBrush)  # transparent
 
     def add_tile(self, item: QGraphicsItem):
         item.setParentItem(self)
+
+
+class DashMask(QGraphicsRectItem):
+    def __init__(self, parent=None):
+        super().__init__(QRectF(QPointF(200, -1000), QPointF(1000, 1000)), parent)
+
+        self.setZValue(3)
+
+        self.setPen(Qt.NoPen)
+        self.setBrush(QBrush(QColor("#0F000000")))
 
 
 @dataclass
@@ -65,6 +75,7 @@ class InferWidget(QWidget):
 
         self.radius = 40
 
+        # UI
         self.main_scene = QGraphicsScene(self)
         self.main_scene.setSceneRect(QRectF(QPointF(-1000, -1000), QPointF(1000, 1000)))
 
@@ -77,11 +88,16 @@ class InferWidget(QWidget):
         self.chess_board = ChessBoard()
         self.main_scene.addItem(self.chess_board)
 
+        dash_mask = DashMask()
+        self.main_scene.addItem(dash_mask)
+
+        # data
         self.tiles = {}  # type: Dict[str, TileData]
         self.clues = {}  # type: Dict[str, ClueData]
 
         self.current_memo = None  # type: Optional[InferMemo]
 
+        # debug
         # self.chess_board.add_tile(ReasonGraphicsItem(radius=40, pos=QPointF(100, 100)))
         # self.chess_board.add_tile(AssumeGraphicsItem(radius=40, pos=QPointF(-100, -100)))
         
