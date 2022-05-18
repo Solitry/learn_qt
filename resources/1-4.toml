@@ -1,0 +1,38 @@
+[[AsmTile]]
+name = "start"
+pos = [0, 0]
+text = "This is a start text"
+explain = "All start with this tile"
+show_rely = []
+light_rely = []
+
+[[AsmTile]]
+name = "end"
+pos = [0, 3]
+text = "This is a end text"
+explain = "Collect all clues"
+show_rely = ["start"]
+light_rely = ["reason1", "reason2", "start"]
+
+[[ReasonTile]]
+name = "reason1"
+pos = [0, 2]
+clue = "1-1:1"
+show_rely = ["end"]
+
+[[ReasonTile]]
+name = "reason2"
+pos = [1, 2]
+clue = "1-1:2"
+show_rely = ["end"]
+
+[[ConnTile]]
+name = "conn1"
+pos = [0, 1]
+show_rely = ["start"]
+
+[[AckTile]]
+name = "ack"
+pos = [0, 4]
+next_stage = "2-1"
+show_rely = ["end"]
