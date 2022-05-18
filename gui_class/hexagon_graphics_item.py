@@ -15,13 +15,13 @@ class HexagonGraphicsItem(QGraphicsPolygonItem):
                  ):
         super().__init__(parent)
 
-        self.radius = radius
+        self.radius = radius - 1
         self.status_list = status_list
 
         polygon = QPolygonF()
         for deg in range(0, 360, 60):
             rad = math.radians(deg)
-            polygon.append(QPointF(radius * math.cos(rad), radius * math.sin(rad)))
+            polygon.append(QPointF(self.radius * math.cos(rad), self.radius * math.sin(rad)))
 
         self.setPolygon(polygon)
         self.setFillRule(Qt.FillRule.WindingFill)
