@@ -1,7 +1,7 @@
 [[AsmTile]]
 name = "start"
 pos = [0, 0]
-text = "This is a start text"
+text = "ケアマネジありがと"
 explain = "All start with this tile"
 show_rely = []
 light_rely = []
@@ -9,7 +9,7 @@ light_rely = []
 [[AsmTile]]
 name = "end"
 pos = [0, 3]
-text = "This is a end text"
+text = "这是一个中文文本"
 explain = "Collect all clues"
 show_rely = ["start"]
 light_rely = ["reason1", "reason2", "start"]

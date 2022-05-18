@@ -32,7 +32,7 @@ class ScreenWidget(QWidget):
         # self.switch_stage("1-1")
 
         # for debug
-        self.records = Records.load_json("saved/init.dat")
+        self.records = Records.load_json("saved/test.dat")
         self.switch_stage()
 
     def switch_stage(self, stage_name: Optional[str] = None):

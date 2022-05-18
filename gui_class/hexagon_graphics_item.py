@@ -15,7 +15,7 @@ class HexagonGraphicsItem(QGraphicsPolygonItem):
                  ):
         super().__init__(parent)
 
-        self.radius = radius - 1
+        self.radius = radius - 2
         self.status_list = status_list
 
         polygon = QPolygonF()
@@ -26,7 +26,14 @@ class HexagonGraphicsItem(QGraphicsPolygonItem):
         self.setPolygon(polygon)
         self.setFillRule(Qt.FillRule.WindingFill)
 
-        self.description = None  # type: Optional[QGraphicsTextItem]
+        # self.description = None  # type: Optional[QGraphicsTextItem]
+        self.description = []
+        for _, _, text in self.status_list:
+            des = QGraphicsTextItem(text or "", self)
+            des.setTextWidth(2 * self.radius)
+            des.setPos(-des.boundingRect().center())
+            des.hide()
+            self.description.append(des)
 
         self.status = init_status
         self.enter_status(init_status)
@@ -51,13 +58,16 @@ class HexagonGraphicsItem(QGraphicsPolygonItem):
         brush.setStyle(Qt.SolidPattern)
         self.setBrush(brush)
 
-        if self.description is not None:
-            self.description.deleteLater()
-            self.description = None
+        # if self.description is not None:
+        #     self.description.deleteLater()
+        #     self.description = None
 
-        if self.status_list[idx][2] is not None:
-            self.description = QGraphicsTextItem(self.status_list[idx][2], self)
-            self.description.setTextWidth(2 * self.radius)
-            self.description.setPos(-self.description.boundingRect().center())
+        # if self.status_list[idx][2] is not None:
+        #     self.description = QGraphicsTextItem(self.status_list[idx][2], self)
+        #     self.description.setTextWidth(2 * self.radius)
+        #     self.description.setPos(-self.description.boundingRect().center())
+
+        self.description[self.status].hide()
+        self.description[idx].show()
 
         self.status = idx
