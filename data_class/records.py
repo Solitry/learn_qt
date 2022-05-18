@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Dict, Union
+import json
 
 
 @dataclass
@@ -55,6 +56,17 @@ class Records:
             ret.memo[key] = item
         return ret
 
+    def dump_json(self, path):
+        pure_obj = self.to_pure_obj()
+        with open(path, "w") as f:
+            json.dump(pure_obj, f)
+
+    @staticmethod
+    def load_json(path) -> "Records":
+        with open(path, "r") as f:
+            pure_obj = json.load(f)
+        return Records.from_pure_obj(pure_obj)
+
 
 if __name__ == '__main__':
     records = Records()
@@ -69,9 +81,13 @@ if __name__ == '__main__':
     records.memo["1-3"] = TextMemo()
 
     records.memo["1-4"] = InferMemo()
-    records.memo["1-4"].light_up_reasons.append("1-1:1")
+    records.memo["1-4"].light_up_reasons.append("reason1")
 
-    dump_obj = records.to_pure_obj()
-    print(dump_obj)
-    load_record = Records.from_pure_obj(dump_obj)
-    print(load_record)
+    # dump_obj = records.to_pure_obj()
+    # print(dump_obj)
+    # load_record = Records.from_pure_obj(dump_obj)
+    # print(load_record)
+
+    records.dump_json("../saved/test.dat")
+    load_records = Records.load_json("../saved/test.dat")
+    print(load_records)
