@@ -1,0 +1,1 @@
+{"history_stages": ["1-1", "1-2", "1-3", "1-4"], "memo": {"1-1": {"type": "TextMemo"}, "1-2": {"type": "TextMemo"}, "1-3": {"type": "TextMemo"}, "1-4": {"type": "InferMemo", "light_up_reasons": ["reason1"]}}}
