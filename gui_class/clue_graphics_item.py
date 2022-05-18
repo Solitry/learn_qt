@@ -36,12 +36,13 @@ class ClueGraphicsItem(QGraphicsPolygonItem):
         self.description = QGraphicsTextItem("中文测试这是一个长字符串啊啊啊啊啊啊", self)
         self.description.setTextWidth(2 * radius)
         self.description.setPos(-self.description.boundingRect().center())
+        self.description.setZValue(4)
 
         self.setPos(pos)
         self.init_pos = pos
 
         self.setFlags(QGraphicsItem.ItemIsMovable)
-        self.setZValue(1)
+        self.setZValue(3)
 
         self.delegate = ClueSignalDelegate()
 

@@ -32,7 +32,6 @@ class ChessBoard(QGraphicsRectItem):
 
     def add_tile(self, item: QGraphicsItem):
         item.setParentItem(self)
-        item.setZValue(1)
 
 
 @dataclass
@@ -57,6 +56,7 @@ class TileData:
 class InferWidget(QWidget):
     go_next = Signal(str)
 
+    Origin = QPointF(-300, 0)
     TileAxisA = QPointF(0, -math.sqrt(3))
     TileAxisB = QPointF(1.5, -0.5 * math.sqrt(3))
 
@@ -84,12 +84,12 @@ class InferWidget(QWidget):
 
         # self.chess_board.add_tile(ReasonGraphicsItem(radius=40, pos=QPointF(100, 100)))
         # self.chess_board.add_tile(AssumeGraphicsItem(radius=40, pos=QPointF(-100, -100)))
-        #
-        # self.clues2 = [
-        #     ClueGraphicsItem(radius=40, pos=QPointF(200, 200)),
-        # ]
-        #
-        # self.add_clue(self.clues2[0])
+        
+        self.clues2 = [
+            ClueGraphicsItem(radius=40, pos=QPointF(200, 200)),
+        ]
+        
+        self.add_clue(self.clues2[0])
 
     def add_clue(self, clue: ClueGraphicsItem):
         self.main_scene.addItem(clue)
@@ -130,10 +130,7 @@ class InferWidget(QWidget):
             self.chess_board.add_tile(tile_data.graphics_item)
 
     def _get_hexagon_pos(self, a, b) -> QPointF:
-        return self.TileAxisA * (self.radius * a) + self.TileAxisB * (self.radius * b)
-
-    def _load_tiles(self, infer_stage: InferStage, infer_memo: InferMemo):
-        pass
+        return self.Origin + self.TileAxisA * (self.radius * a) + self.TileAxisB * (self.radius * b)
 
     def _load_clues(self):
         pass

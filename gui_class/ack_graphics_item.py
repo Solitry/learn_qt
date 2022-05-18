@@ -8,8 +8,8 @@ class AckGraphicsItem(HexagonGraphicsItem):
         super().__init__(
             radius=radius,
             status_list=[
-                (QColor("#FF66FF"), QColor("#FF66FF"), "中文测试这是一个长字符串啊啊啊啊啊啊"),
-                (QColor("#990099"), QColor("#CC00CC"), "中文测试这是一个长字符串啊啊啊啊啊啊"),
+                (QColor("#99FF66FF"), QColor("#99FF66FF"), "中文测试这是一个长字符串啊啊啊啊啊啊"),
+                (QColor("#99990099"), QColor("#99CC00CC"), "中文测试这是一个长字符串啊啊啊啊啊啊"),
             ],
             pos=pos,
             init_status=0,

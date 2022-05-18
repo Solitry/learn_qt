@@ -8,7 +8,7 @@ class ConnectGraphicsItem(HexagonGraphicsItem):
         super().__init__(
             radius=radius * 0.9,
             status_list=[
-                (QColor("#E0E0E0"), QColor("#E0E0E0"), None),
+                (QColor("#99E0E0E0"), QColor("#99E0E0E0"), None),
             ],
             pos=pos,
             init_status=0,

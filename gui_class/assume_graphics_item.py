@@ -8,8 +8,8 @@ class AssumeGraphicsItem(HexagonGraphicsItem):
         super().__init__(
             radius=radius,
             status_list=[
-                (QColor("#FF3333"), QColor("#FF9999"), "中文测试这是一个长字符串啊啊啊啊啊啊"),
-                (QColor("#FF3333"), QColor("#FF9999"), "中文测试这是一个长字符串啊啊啊啊啊啊"),
+                (QColor("#99FF3333"), QColor("#99FF9999"), "中文测试这是一个长字符串啊啊啊啊啊啊"),
+                (QColor("#99FF3333"), QColor("#99FF9999"), "中文测试这是一个长字符串啊啊啊啊啊啊"),
             ],
             pos=pos,
             init_status=0,

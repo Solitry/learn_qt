@@ -10,8 +10,8 @@ class ReasonGraphicsItem(HexagonGraphicsItem):
         super().__init__(
             radius=radius,
             status_list=[
-                (QColor("#FFE5CC"), QColor("#FFE5CC"), None),
-                (QColor("#FF9933"), QColor("#FFCC99"), "test"),
+                (QColor("#99FFE5CC"), QColor("#99FFE5CC"), None),
+                (QColor("#99FF9933"), QColor("#99FFCC99"), "test"),
             ],
             pos=pos,
             init_status=0,

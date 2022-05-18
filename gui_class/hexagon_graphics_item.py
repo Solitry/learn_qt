@@ -1,5 +1,5 @@
 from PySide2.QtCore import QPointF, Qt
-from PySide2.QtWidgets import QGraphicsPolygonItem, QGraphicsTextItem
+from PySide2.QtWidgets import QGraphicsPolygonItem, QGraphicsTextItem, QGraphicsSceneHoverEvent
 from PySide2.QtGui import QPolygonF, QPen, QBrush, QColor
 import math
 from typing import Optional, List, Tuple
@@ -30,6 +30,7 @@ class HexagonGraphicsItem(QGraphicsPolygonItem):
 
         self.status = init_status
         self.enter_status(init_status)
+        self.setZValue(1)
 
         self.setPos(pos)
 
