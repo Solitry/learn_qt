@@ -51,7 +51,7 @@ class ScreenWidget(QWidget):
         elif isinstance(stage, InferStage):
             if stage_name not in self.records.memo:
                 self.records.memo[stage_name] = InferMemo()
-            self.infer_widget.reload(stage_info_list=self._prepare_stage_info())
+            self.infer_widget.reload(self.stage_pool.stages, self.records.memo, self.records.history_stages)
             self.layout.setCurrentWidget(self.infer_widget)
         else:
             raise NotImplementedError("Unknown stage type")
@@ -60,13 +60,3 @@ class ScreenWidget(QWidget):
         self.records.history_stages.pop()
         prev_stage = self.records.history_stages.pop()
         self.switch_stage(prev_stage)
-
-    def _prepare_stage_info(self) -> List[Union[Tuple[TextStage, TextMemo], Tuple[InferStage, InferMemo]]]:
-        already_exist_stage_name = set()
-        ret = []
-        for stage_name in self.records.history_stages:
-            if stage_name in already_exist_stage_name:
-                continue
-            ret.append((self.stage_pool.stages[stage_name], self.records.memo[stage_name]))
-            already_exist_stage_name.add(stage_name)
-        return ret

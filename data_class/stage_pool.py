@@ -1,4 +1,5 @@
 import os
+from typing import Dict, Union
 
 from .text_stage import TextStage
 from .infer_stage import InferStage
@@ -6,7 +7,7 @@ from .infer_stage import InferStage
 
 class StagePool(object):
     def __init__(self):
-        self.stages = {}
+        self.stages = {}  # type: Dict[str, Union[TextStage, InferStage]]
 
     def load_from_file(self, path):
         for item in os.listdir(path):

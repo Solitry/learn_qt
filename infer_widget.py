@@ -313,7 +313,11 @@ class InferWidget(QWidget):
 
         self.text_stage_idx = idx
 
-    def reload(self, stage_info_list: List[Union[Tuple[TextStage, TextMemo], Tuple[InferStage, InferMemo]]]):
+    def reload(self, 
+               stages: Dict[str, Union[TextStage, InferStage]],
+               memos: Dict[str, Union[TextMemo, InferMemo]],
+               history_stages: List[str],
+               ):
         # clear tiles
         for key, item in self.tiles.items():
             self.main_scene.removeItem(item.graphics_item)
@@ -325,22 +329,15 @@ class InferWidget(QWidget):
         self.clues.clear()
 
         # current stage
-        self.current_infer_stage, self.current_memo = stage_info_list[-1]  # type: InferStage, InferMemo
+        current_stage_name = history_stages[-1]
+        self.current_infer_stage = cast(InferStage, stages[current_stage_name])
+        self.current_memo = cast(InferMemo, memos[current_stage_name])
 
-        # handled stage set, to avoid duplicated
-        handled_stage_set = set()
-
-        # load clues & text stages
-        self.text_stages = []
-
-        for stage, memo in stage_info_list:
+        # load clues
+        for stage_name in self.current_infer_stage.rel_stages:
+            stage = stages[stage_name]
+            meno = memos[stage_name]
             if isinstance(stage, TextStage):
-                if stage.name not in self.current_infer_stage.rel_stages:
-                    continue
-                if stage.name in handled_stage_set:
-                    continue
-                handled_stage_set.add(stage.name)
-                # clues
                 for idx, clue in enumerate(stage.clues):
                     if idx >= 9:
                         raise IndexError("Not support more than 9 clues in 1 stage")
@@ -350,7 +347,23 @@ class InferWidget(QWidget):
                     clue_data.graphics_item.hide()
                     self.add_clue(clue_data.graphics_item)
                     self.clues[clue.name] = clue_data
-                # text stages
+
+        # load text stages
+        self.text_stages = []
+        handled_stage_set = set()  # handled stage set, to avoid duplicated
+
+        for stage_name in history_stages:
+            if stage.name in handled_stage_set:
+                continue
+            handled_stage_set.add(stage.name)
+
+            if stage.name not in self.current_infer_stage.rel_stages:
+                continue
+            
+            stage = stages[stage_name]
+            meno = memos[stage_name]
+
+            if isinstance(stage, TextStage):
                 self.text_stages.append((stage, memo))
 
         # load tiles
@@ -379,12 +392,17 @@ class InferWidget(QWidget):
             self.tiles[name] = tile_data
 
         # set used flag to the clues of the previous infer stages
-        for stage, memo in stage_info_list[:-1]:
-            if isinstance(stage, InferStage):
-                if stage.name in handled_stage_set:
-                    continue
-                handled_stage_set.add(stage.name)
+        handled_stage_set = set()  # handled stage set, to avoid duplicated
 
+        for stage_name in history_stages:
+            if stage.name in handled_stage_set:
+                continue
+            handled_stage_set.add(stage.name)
+            
+            stage = stages[stage_name]
+            meno = memos[stage_name]
+
+            if isinstance(stage, InferStage):
                 for light_up_reason in memo.light_up_reasons:
                     reason_tile = cast(ReasonTile, stage.tiles[light_up_reason])
                     self.clues[reason_tile.clue].used = True
