@@ -2,7 +2,7 @@ from PySide2.QtCore import Qt, Signal, QRectF, QPointF
 from PySide2.QtWidgets import QWidget, QHBoxLayout, QGraphicsScene, QGraphicsRectItem, QGraphicsItem, QGraphicsTextItem
 from PySide2.QtGui import QBrush, QColor
 
-from typing import List, Union, Tuple, Optional, Any, Dict, cast
+from typing import List, Union, Tuple, Optional, Dict, cast
 from dataclasses import dataclass, field
 import math
 import collections
@@ -10,6 +10,7 @@ import collections
 from gui_class.fixed_graphics_view import FixedGraphicsView
 from gui_class.arrow_graphics_item import ArrowGraphicsItem
 
+from gui_class.hexagon_graphics_item import HexagonGraphicsItem
 from gui_class.ack_graphics_item import AckGraphicsItem
 from gui_class.assume_graphics_item import AssumeGraphicsItem
 from gui_class.connect_graphics_item import ConnectGraphicsItem
@@ -56,10 +57,10 @@ class TextStageBriefBoard(QGraphicsRectItem):
         self.setBrush(QBrush(QColor("#FFFFFF")))
 
         self.text_area = QGraphicsTextItem("", self)
-    
+
     def set_background_color(self, color: QColor):
         self.setBrush(QBrush(color))
-    
+
     def set_text(self, text: str):
         self.text_area.setPlainText(text)
         self.text_area.setTextWidth(200)
@@ -83,8 +84,8 @@ class TileData:
     show: bool = False
     light: bool = False
     graphics_item: Optional[AllTilesGraphicsItem] = None
-    link_tiles: List[str] = field(default_factory=list)
-    extra: Dict[str, Any] = field(default_factory=dict)
+    link_tiles: List[str] = field(default_factory=list)  # all the tiles that rely on this tile
+    link_reasons: List[str] = field(default_factory=list)  # all the reason tiles that have relationship with this tile
 
 
 class InferWidget(QWidget):
@@ -153,7 +154,7 @@ class InferWidget(QWidget):
         # debug
         # self.chess_board.add_tile(ReasonGraphicsItem(radius=40, pos=QPointF(100, 100)))
         # self.chess_board.add_tile(AssumeGraphicsItem(radius=40, pos=QPointF(-100, -100)))
-        
+
         # self.clues2 = [ClueGraphicsItem(radius=40, pos=QPointF(100, 200))]
         # self.add_clue(self.clues2[0])
 
@@ -161,12 +162,41 @@ class InferWidget(QWidget):
         self.main_scene.addItem(clue)
         clue.delegate.drop.connect(self.clue_drop)
 
-    def clue_drop(self, name: str, scene_pos: QPointF):
-        # print(scene_pos)
+    def clue_drop(self, clue_name: str, scene_pos: QPointF):
+        possible_reasons = []
         for item in self.main_scene.items(scene_pos):
-            if isinstance(item, ReasonGraphicsItem):
-                item.enter_status(1)
-        # TODO: drop clue on reason
+            if isinstance(item, HexagonGraphicsItem):
+                if item.name in self.tiles:
+                    possible_reasons = self.tiles[item.name].link_reasons
+                    break
+
+        # print(clue_name, possible_reasons)
+
+        accepted_reason_tile_data = None
+        for reason in possible_reasons:
+            tile_data = self.tiles[reason]
+            tile = cast(ReasonTile, tile_data.tile)
+            if tile.clue == clue_name and not tile_data.light:
+                accepted_reason_tile_data = tile_data
+                break
+
+        if accepted_reason_tile_data is None:
+            return
+
+        # maintain clue
+        clue_data = self.clues[clue_name]
+        clue_data.used = True
+
+        # hide clue
+        clue_data.graphics_item.hide()
+
+        # maintain memo
+        self.current_memo.light_up_reasons.append(accepted_reason_tile_data.tile.name)
+        # print(self.current_memo.light_up_reasons)
+
+        # maintain tile
+        accepted_reason_tile_data.light = True
+        self.update_tiles_status([accepted_reason_tile_data.tile.name])
 
     def reason_cancel_clue(self, reason_name: str):
         tile_data = self.tiles[reason_name]
@@ -176,6 +206,7 @@ class InferWidget(QWidget):
 
         tile = cast(ReasonTile, tile_data.tile)
 
+        # maintain clue
         clue_data = self.clues[tile.clue]
         clue_data.used = False
 
@@ -189,7 +220,6 @@ class InferWidget(QWidget):
 
         # maintain tile
         tile_data.light = False
-        self.update_tile_graphics_item(tile_data)
         self.update_tiles_status([reason_name])
 
     def switch_text_stage(self, delta: int):
@@ -198,17 +228,17 @@ class InferWidget(QWidget):
     def switch_to_target_text_stage(self, idx: int):
         if idx < 0 or idx >= len(self.text_stages):
             return
-        
+
         if idx == 0:
             self.left_arrow.hide()
         else:
             self.left_arrow.show()
-        
+
         if idx + 1 == len(self.text_stages):
             self.right_arrow.hide()
         else:
             self.right_arrow.show()
-        
+
         stage, memo = self.text_stages[idx]
 
         # show brief
@@ -244,6 +274,9 @@ class InferWidget(QWidget):
         # current stage
         self.current_infer_stage, self.current_memo = stage_info_list[-1]  # type: InferStage, InferMemo
 
+        # handled stage set, to avoid duplicated
+        handled_stage_set = set()
+
         # load clues & text stages
         self.text_stages = []
 
@@ -251,6 +284,9 @@ class InferWidget(QWidget):
             if isinstance(stage, TextStage):
                 if stage.name not in self.current_infer_stage.rel_stages:
                     continue
+                if stage.name in handled_stage_set:
+                    continue
+                handled_stage_set.add(stage.name)
                 # clues
                 for idx, clue in enumerate(stage.clues):
                     if idx >= 9:
@@ -288,10 +324,14 @@ class InferWidget(QWidget):
 
             self.chess_board.add_tile(tile_data.graphics_item)
             self.tiles[name] = tile_data
-        
+
         # set used flag to the clues of the previous infer stages
         for stage, memo in stage_info_list[:-1]:
             if isinstance(stage, InferStage):
+                if stage.name in handled_stage_set:
+                    continue
+                handled_stage_set.add(stage.name)
+
                 for light_up_reason in memo.light_up_reasons:
                     reason_tile = cast(ReasonTile, stage.tiles[light_up_reason])
                     self.clues[reason_tile.clue].used = True
@@ -327,15 +367,49 @@ class InferWidget(QWidget):
         # prepare dashboard
         self.switch_to_target_text_stage(len(self.text_stages) - 1)
 
+        # maintain link reasons
+        #   1. AsmTile => ReasonTile
+        #   2. ReasonTile => ReasonTile
+        reason_tiles_link_asm = {
+            name: []
+            for name, tile_data in self.tiles.items()
+            if isinstance(tile_data.tile, ReasonTile)
+        }
+
+        for name, tile_data in self.tiles.items():
+            if isinstance(tile_data.tile, AsmTile):
+                for lr in tile_data.tile.light_rely:
+                    lr_tile_data = self.tiles[lr]
+                    if isinstance(lr_tile_data.tile, ReasonTile):
+                        tile_data.link_reasons.append(lr)
+                        reason_tiles_link_asm[lr].append(name)
+
+        for _, item in reason_tiles_link_asm.items():
+            item.sort()
+
+        for name0, item0 in reason_tiles_link_asm.items():
+            for name1, item1 in reason_tiles_link_asm.items():
+                if item0 == item1:  # also add self here
+                    self.tiles[name0].link_reasons.append(name1)
+
+        # for name, tile_data in self.tiles.items():
+        #     print(name, ":", ', '.join(tile_data.link_reasons))
+
     def _get_hexagon_pos(self, a, b) -> QPointF:
         return self.Origin + self.TileAxisA * (self.radius * a) + self.TileAxisB * (self.radius * b)
 
     def update_tiles_status(self, changed_tiles):
         # print("------------")
-        q = collections.deque(changed_tiles)
+        q = collections.deque()
+        s = set()
+
+        for item in changed_tiles:
+            q.append((item, True))
+            s.add(item)
 
         while len(q) > 0:
-            tile_data = self.tiles[q[0]]
+            tile_name, force_modified = q[0]
+            tile_data = self.tiles[tile_name]
             # print(tile_data.tile.name, ":", tile_data.show, tile_data.light)
 
             if isinstance(tile_data.tile, AsmTile):
@@ -349,15 +423,17 @@ class InferWidget(QWidget):
             else:
                 raise NotImplementedError("Not support tile type")
 
-            if modified:
+            if modified or force_modified:
                 # print(" modify", tile_data.show, tile_data.light)
                 for link_tile in tile_data.link_tiles:
-                    if q.count(link_tile) == 0:
-                        q.append(link_tile)
+                    if link_tile not in s:
+                        q.append((link_tile, False))
+                        s.add(link_tile)
 
                 self.update_tile_graphics_item(tile_data)
 
             q.popleft()
+            s.remove(tile_name)
 
     def _update_asm_tile_status(self, tile_data: TileData) -> bool:
         tile = cast(AsmTile, tile_data.tile)
