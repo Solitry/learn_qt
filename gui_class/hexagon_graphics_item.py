@@ -32,7 +32,9 @@ class HexagonGraphicsItem(QGraphicsPolygonItem):
         self.description = []
         for _, _, text in self.status_list:
             des = QGraphicsTextItem(text or "", self)
-            des.setTextWidth(2 * self.radius)
+            des.adjustSize()
+            if des.textWidth() > 2 * self.radius:
+                des.setTextWidth(2 * self.radius)
             des.setPos(-des.boundingRect().center())
             des.hide()
             self.description.append(des)

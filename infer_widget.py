@@ -17,6 +17,7 @@ from gui_class.connect_graphics_item import ConnectGraphicsItem
 from gui_class.reason_graphics_item import ReasonGraphicsItem
 
 from gui_class.clue_graphics_item import ClueGraphicsItem
+from gui_class.confirm_graphics_item import ConfirmGraphicsItem
 
 from data_class.text_stage import TextStage, Clue
 from data_class.infer_stage import InferStage, Tile, AsmTile, AckTile, ReasonTile, ConnTile
@@ -63,7 +64,9 @@ class TextStageBriefBoard(QGraphicsRectItem):
 
     def set_text(self, text: str):
         self.text_area.setPlainText(text)
-        self.text_area.setTextWidth(200)
+        self.text_area.adjustSize()
+        if self.text_area.textWidth() > 200:
+            self.text_area.setTextWidth(200)
         self.text_area.setPos(self.boundingRect().center() - self.text_area.boundingRect().center())
 
 
@@ -88,6 +91,12 @@ class TileData:
     link_reasons: List[str] = field(default_factory=list)  # all the reason tiles that have relationship with this tile
 
 
+@dataclass
+class ConfirmData:
+    used: bool = False
+    graphics_item: Optional[ConfirmGraphicsItem] = None
+
+
 class InferWidget(QWidget):
     go_next = Signal(str)
 
@@ -105,9 +114,9 @@ class InferWidget(QWidget):
         QPointF(311.000000, 217.000000),
         QPointF(429.000000, 211.000000),
         QPointF(568.000000, 215.000000),
-
-        QPointF(513.000000, 271.000000),
     ]
+
+    ConfirmPos = QPointF(513.000000, 271.000000)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -140,6 +149,12 @@ class InferWidget(QWidget):
         self.right_arrow = ArrowGraphicsItem(20, 0, QPointF(580, -150))
         self.right_arrow.delegate.clicked.connect(lambda: self.switch_text_stage(1))
         self.main_scene.addItem(self.right_arrow)
+
+        self.confirm_data = ConfirmData()
+        confirm = ConfirmGraphicsItem(name="#confirm", radius=self.radius, pos=self.ConfirmPos, text="确认了")
+        confirm.delegate.drop.connect(self.confirm_drop)
+        self.main_scene.addItem(confirm)
+        self.confirm_data.graphics_item = confirm
 
         # data
         self.tiles = {}  # type: Dict[str, TileData]
@@ -221,6 +236,30 @@ class InferWidget(QWidget):
         # maintain tile
         tile_data.light = False
         self.update_tiles_status([reason_name])
+
+    def confirm_drop(self, scene_pos: QPointF):
+        ack_tile_name = None
+        for item in self.main_scene.items(scene_pos):
+            if isinstance(item, AckGraphicsItem):
+                ack_tile_name = item.name
+
+        if ack_tile_name is None:
+            return
+
+        # maintain confirm
+        self.confirm_data.used = True
+
+        # hide confirm
+        self.confirm_data.graphics_item.hide()
+
+        # maintain tile
+        ack_tile_data = self.tiles[ack_tile_name]
+        ack_tile_data.light = True
+        self.update_tiles_status([ack_tile_name])
+
+        # goto next stage
+        ack_tile = cast(AckTile, ack_tile_data.tile)
+        self.go_next.emit(ack_tile.next_stage)
 
     def switch_text_stage(self, delta: int):
         self.switch_to_target_text_stage(self.text_stage_idx + delta)
@@ -430,10 +469,12 @@ class InferWidget(QWidget):
                         q.append((link_tile, False))
                         s.add(link_tile)
 
-                self.update_tile_graphics_item(tile_data)
+                self._update_tile_graphics_item(tile_data)
 
             q.popleft()
             s.remove(tile_name)
+
+        self._update_confirm_graphics_item()
 
     def _update_asm_tile_status(self, tile_data: TileData) -> bool:
         tile = cast(AsmTile, tile_data.tile)
@@ -478,7 +519,7 @@ class InferWidget(QWidget):
         return modified
 
     @staticmethod
-    def update_tile_graphics_item(tile_data: TileData):
+    def _update_tile_graphics_item(tile_data: TileData):
         if tile_data.show:
             tile_data.graphics_item.show()
         else:
@@ -488,3 +529,15 @@ class InferWidget(QWidget):
             tile_data.graphics_item.enter_status(1)
         else:
             tile_data.graphics_item.enter_status(0)
+
+    def _update_confirm_graphics_item(self):
+        has_ack_show = any([
+            tile_data.show
+            for _, tile_data in self.tiles.items()
+            if isinstance(tile_data.tile, AckTile)
+        ])
+
+        if has_ack_show and not self.confirm_data.used:
+            self.confirm_data.graphics_item.show()
+        else:
+            self.confirm_data.graphics_item.hide()
