@@ -169,8 +169,28 @@ class InferWidget(QWidget):
         # TODO: drop clue on reason
 
     def reason_cancel_clue(self, reason_name: str):
-        # TODO: cancel clue on reason
-        pass
+        tile_data = self.tiles[reason_name]
+
+        if not tile_data.light:  # reason not light-up
+            return
+
+        tile = cast(ReasonTile, tile_data.tile)
+
+        clue_data = self.clues[tile.clue]
+        clue_data.used = False
+
+        # show clue
+        if clue_data.belong_stage == self.text_stages[self.text_stage_idx][0].name:
+            clue_data.graphics_item.show()
+
+        # maintain memo
+        self.current_memo.light_up_reasons.remove(reason_name)
+        # print(self.current_memo.light_up_reasons)
+
+        # maintain tile
+        tile_data.light = False
+        self.update_tile_graphics_item(tile_data)
+        self.update_tiles_status([reason_name])
 
     def switch_text_stage(self, delta: int):
         self.switch_to_target_text_stage(self.text_stage_idx + delta)
@@ -311,6 +331,7 @@ class InferWidget(QWidget):
         return self.Origin + self.TileAxisA * (self.radius * a) + self.TileAxisB * (self.radius * b)
 
     def update_tiles_status(self, changed_tiles):
+        # print("------------")
         q = collections.deque(changed_tiles)
 
         while len(q) > 0:
@@ -334,16 +355,7 @@ class InferWidget(QWidget):
                     if q.count(link_tile) == 0:
                         q.append(link_tile)
 
-                # update graphics
-                if tile_data.show:
-                    tile_data.graphics_item.show()
-                else:
-                    tile_data.graphics_item.hide()
-
-                if tile_data.light:
-                    tile_data.graphics_item.enter_status(1)
-                else:
-                    tile_data.graphics_item.enter_status(0)
+                self.update_tile_graphics_item(tile_data)
 
             q.popleft()
 
@@ -388,3 +400,15 @@ class InferWidget(QWidget):
         tile_data.show = new_show
 
         return modified
+
+    @staticmethod
+    def update_tile_graphics_item(tile_data: TileData):
+        if tile_data.show:
+            tile_data.graphics_item.show()
+        else:
+            tile_data.graphics_item.hide()
+
+        if tile_data.light:
+            tile_data.graphics_item.enter_status(1)
+        else:
+            tile_data.graphics_item.enter_status(0)
