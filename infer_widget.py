@@ -191,26 +191,14 @@ class InferWidget(QWidget):
         for reason in possible_reasons:
             tile_data = self.tiles[reason]
             tile = cast(ReasonTile, tile_data.tile)
-            if tile.clue == clue_name and not tile_data.light:
+            if tile.clue == clue_name and tile_data.show and not tile_data.light:
                 accepted_reason_tile_data = tile_data
                 break
 
         if accepted_reason_tile_data is None:
             return
 
-        # maintain clue
-        clue_data = self.clues[clue_name]
-        clue_data.used = True
-
-        # hide clue
-        clue_data.graphics_item.hide()
-
-        # maintain memo
-        self.current_memo.light_up_reasons.append(accepted_reason_tile_data.tile.name)
-        # print(self.current_memo.light_up_reasons)
-
-        # maintain tile
-        accepted_reason_tile_data.light = True
+        self.lock_clue(accepted_reason_tile_data, clue_name)
         self.update_tiles_status([accepted_reason_tile_data.tile.name])
 
     def reason_cancel_clue(self, reason_name: str):
@@ -221,21 +209,45 @@ class InferWidget(QWidget):
 
         tile = cast(ReasonTile, tile_data.tile)
 
-        # maintain clue
-        clue_data = self.clues[tile.clue]
+        self.release_clue(tile_data, tile.clue)
+        self.update_tiles_status([reason_name])
+
+    def lock_clue(self, reason_tile_data: TileData, clue_name: str):
+        clue_data = self.clues[clue_name]
+
+        if clue_data.used:  # avoid multi-lock
+            return
+
+        clue_data.used = True
+
+        # hide clue
+        clue_data.graphics_item.hide()
+
+        # light reason
+        reason_tile_data.light = True
+
+        # maintain memo
+        self.current_memo.light_up_reasons.append(reason_tile_data.tile.name)
+        # print(self.current_memo.light_up_reasons)
+
+    def release_clue(self, reason_tile_data: TileData, clue_name: str):
+        clue_data = self.clues[clue_name]
+
+        if not clue_data.used:  # avoid multi-release
+            return
+
         clue_data.used = False
 
         # show clue
         if clue_data.belong_stage == self.text_stages[self.text_stage_idx][0].name:
             clue_data.graphics_item.show()
 
-        # maintain memo
-        self.current_memo.light_up_reasons.remove(reason_name)
-        # print(self.current_memo.light_up_reasons)
+        # light reason
+        reason_tile_data.light = False
 
-        # maintain tile
-        tile_data.light = False
-        self.update_tiles_status([reason_name])
+        # maintain memo
+        self.current_memo.light_up_reasons.remove(reason_tile_data.tile.name)
+        # print(self.current_memo.light_up_reasons)
 
     def confirm_drop(self, scene_pos: QPointF):
         ack_tile_name = None
@@ -258,6 +270,8 @@ class InferWidget(QWidget):
         self.update_tiles_status([ack_tile_name])
 
         # goto next stage
+        self.confirm_data.used = False
+
         ack_tile = cast(AckTile, ack_tile_data.tile)
         self.go_next.emit(ack_tile.next_stage)
 
@@ -505,6 +519,9 @@ class InferWidget(QWidget):
         modified = new_show != tile_data.show
 
         tile_data.show = new_show
+
+        if modified and not new_show:
+            self.release_clue(tile_data, tile.clue)
 
         return modified
 
