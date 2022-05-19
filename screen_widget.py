@@ -32,7 +32,7 @@ class ScreenWidget(QWidget):
         # self.switch_stage("1-1")
 
         # for debug
-        self.records = Records.load_json("saved/init.dat")
+        self.records = Records.load_json("saved/init_a.dat")
         self.switch_stage()
 
     def switch_stage(self, stage_name: Optional[str] = None):
@@ -46,7 +46,7 @@ class ScreenWidget(QWidget):
         if isinstance(stage, TextStage):
             if stage_name not in self.records.memo:
                 self.records.memo[stage_name] = TextMemo()
-            self.text_widget.reload(text_stage=stage, has_history=len(self.records.history_stages) > 1)
+            self.text_widget.reload(text_stage=stage, can_back=self._if_can_back())
             self.layout.setCurrentWidget(self.text_widget)
         elif isinstance(stage, InferStage):
             if stage_name not in self.records.memo:
@@ -60,6 +60,14 @@ class ScreenWidget(QWidget):
         self.records.history_stages.pop()
         prev_stage = self.records.history_stages.pop()
         self.switch_stage(prev_stage)
+
+    def _if_can_back(self) -> bool:
+        if len(self.records.history_stages) <= 1:
+            return False
+        last_stage_name = self.records.history_stages[-2]
+        if isinstance(self.stage_pool.stages[last_stage_name], InferStage):
+            return False
+        return True
 
     def _prepare_stage_info(self) -> List[Union[Tuple[TextStage, TextMemo], Tuple[InferStage, InferMemo]]]:
         # already_exist_stage_name = set()

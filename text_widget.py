@@ -31,7 +31,7 @@ class TextWidget(QWidget):
         self.main_layout.addWidget(self.show_text, 1)
         self.main_layout.addLayout(self.btn_layout, 0)
 
-    def reload(self, text_stage: TextStage, has_history: bool) -> None:
+    def reload(self, text_stage: TextStage, can_back: bool) -> None:
         self.show_text.setMarkdown(text_stage.text or "")
 
         p = QPalette()
@@ -44,7 +44,7 @@ class TextWidget(QWidget):
 
         prev_btn = QPushButton("<-", self)
         prev_btn.clicked.connect(lambda: self.go_prev.emit())
-        if not has_history:
+        if not can_back:
             prev_btn.hide()
         self.btn_layout.addWidget(prev_btn, 0)
 

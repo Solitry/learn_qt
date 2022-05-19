@@ -77,42 +77,46 @@ class InferStage:
 
         self.rel_stages = data["rel_stages"]
 
-        for item in data["AsmTile"]:
-            tile = AsmTile()
-            tile.name = item["name"]
-            tile.pos.a = item["pos"][0]
-            tile.pos.b = item["pos"][1]
-            tile.text = item["text"]
-            tile.explain = item["explain"]
-            tile.show_rely = sorted(item["show_rely"])
-            tile.light_rely = sorted(item["light_rely"])
-            self.tiles[tile.name] = tile
+        if "AsmTile" in data:
+            for item in data["AsmTile"]:
+                tile = AsmTile()
+                tile.name = item["name"]
+                tile.pos.a = item["pos"][0]
+                tile.pos.b = item["pos"][1]
+                tile.text = item["text"]
+                tile.explain = item["explain"]
+                tile.show_rely = sorted(item["show_rely"])
+                tile.light_rely = sorted(item["light_rely"])
+                self.tiles[tile.name] = tile
 
-        for item in data["AckTile"]:
-            tile = AckTile()
-            tile.name = item["name"]
-            tile.pos.a = item["pos"][0]
-            tile.pos.b = item["pos"][1]
-            tile.next_stage = item["next_stage"]
-            tile.show_rely = sorted(item["show_rely"])
-            self.tiles[tile.name] = tile
+        if "AckTile" in data:
+            for item in data["AckTile"]:
+                tile = AckTile()
+                tile.name = item["name"]
+                tile.pos.a = item["pos"][0]
+                tile.pos.b = item["pos"][1]
+                tile.next_stage = item["next_stage"]
+                tile.show_rely = sorted(item["show_rely"])
+                self.tiles[tile.name] = tile
 
-        for item in data["ReasonTile"]:
-            tile = ReasonTile()
-            tile.name = item["name"]
-            tile.pos.a = item["pos"][0]
-            tile.pos.b = item["pos"][1]
-            tile.clue = item["clue"]
-            tile.show_rely = sorted(item["show_rely"])
-            self.tiles[tile.name] = tile
+        if "ReasonTile" in data:
+            for item in data["ReasonTile"]:
+                tile = ReasonTile()
+                tile.name = item["name"]
+                tile.pos.a = item["pos"][0]
+                tile.pos.b = item["pos"][1]
+                tile.clue = item["clue"]
+                tile.show_rely = sorted(item["show_rely"])
+                self.tiles[tile.name] = tile
 
-        for item in data["ConnTile"]:
-            tile = ConnTile()
-            tile.name = item["name"]
-            tile.pos.a = item["pos"][0]
-            tile.pos.b = item["pos"][1]
-            tile.show_rely = sorted(item["show_rely"])
-            self.tiles[tile.name] = tile
+        if "ConnTile" in data:
+            for item in data["ConnTile"]:
+                tile = ConnTile()
+                tile.name = item["name"]
+                tile.pos.a = item["pos"][0]
+                tile.pos.b = item["pos"][1]
+                tile.show_rely = sorted(item["show_rely"])
+                self.tiles[tile.name] = tile
 
 
 if __name__ == '__main__':

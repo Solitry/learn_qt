@@ -1,0 +1,64 @@
+rel_stages = [
+    "a-1",
+    "a-2",
+    "a-3",
+]
+
+[[AsmTile]]
+name = "start"
+pos = [0, 0]
+text = "一个红色方格是一个推论，它可以引出其他推论"
+explain = "All start with this tile"
+show_rely = []
+light_rely = []
+
+[[ConnTile]]
+name = "conn1"
+pos = [0, 1]
+show_rely = ["start"]
+
+[[AsmTile]]
+name = "asm1"
+pos = [0, 3]
+text = "[1] 推论相邻的黄色格子需要填充线索，全部填充后表示这个推论被证实"
+explain = "Collect all clues"
+show_rely = ["start"]
+light_rely = ["reason1", "start"]
+
+[[ReasonTile]]
+name = "reason1"
+pos = [0, 2]
+clue = "a-1:1"
+show_rely = ["asm1"]
+
+[[AsmTile]]
+name = "asm1_intro1"
+pos = [2, 3]
+text = "一个推论证实后，可能出现相邻的紫色格子，代表我们可以进行下一步的剧情"
+explain = "Collect all clues"
+show_rely = ["asm1"]
+light_rely = ["asm1"]
+
+[[AsmTile]]
+name = "asm1_intro2"
+pos = [1, 5]
+text = "此时右下角会出现“看见了”，将其拖拽到紫色格子上进入下一步剧情"
+explain = "Collect all clues"
+show_rely = ["asm1"]
+light_rely = ["asm1"]
+
+[[AckTile]]
+name = "ack1"
+pos = [0, 4]
+next_stage = "a-4"
+show_rely = ["asm1"]
+
+[[ConnTile]]
+name = "conn2-1"
+pos = [-1, 1]
+show_rely = ["start"]
+
+[[ConnTile]]
+name = "conn2-2"
+pos = [-2, 2]
+show_rely = ["start"]
