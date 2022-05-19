@@ -1,7 +1,7 @@
 rel_stages = [
     "a-1",
     "a-2",
-    "a-3",
+    "a-5",
 ]
 
 [[AsmTile]]
@@ -62,3 +62,65 @@ show_rely = ["start"]
 name = "conn2-2"
 pos = [-2, 2]
 show_rely = ["start"]
+
+[[AsmTile]]
+name = "asm2"
+pos = [-2, 4]
+text = "[2] 似乎错误的可能，但似乎别无选择"
+explain = "Collect all clues"
+show_rely = ["start"]
+light_rely = ["reason2-1", "reason2-2", "reason2-3", "start"]
+
+[[ReasonTile]]
+name = "reason2-1"
+pos = [-2, 3]
+clue = "a-2:2"
+show_rely = ["asm2"]
+
+[[ReasonTile]]
+name = "reason2-2"
+pos = [-3, 5]
+clue = "a-2:3"
+show_rely = ["asm2"]
+
+[[ReasonTile]]
+name = "reason2-3"
+pos = [-3, 4]
+clue = "a-2:4"
+show_rely = ["asm2", "asm3"]
+
+[[AckTile]]
+name = "ack2"
+pos = [-2, 5]
+next_stage = "a-5"
+show_rely = ["asm2"]
+
+[[ConnTile]]
+name = "conn3-1"
+pos = [-3, 2]
+show_rely = ["start"]
+
+[[ConnTile]]
+name = "conn3-2"
+pos = [-4, 3]
+show_rely = ["start"]
+
+[[AsmTile]]
+name = "asm3"
+pos = [-4, 4]
+text = "[3] 正确的可能，但目前似乎缺少一个线索"
+explain = "Collect all clues"
+show_rely = ["start"]
+light_rely = ["reason2-3", "reason3", "start"]
+
+[[ReasonTile]]
+name = "reason3"
+pos = [-5, 4]
+clue = "a-5:1"
+show_rely = ["asm3"]
+
+[[AckTile]]
+name = "ack3"
+pos = [-5, 5]
+next_stage = "a-6"
+show_rely = ["asm3"]
