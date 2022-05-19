@@ -365,9 +365,13 @@ class InferWidget(QWidget):
                 tile_data.graphics_item = AckGraphicsItem(name=name, radius=self.radius, pos=pos)
 
             elif isinstance(tile, ReasonTile):
-                clue = self.clues[tile.clue].clue
-                tile_data.graphics_item = ReasonGraphicsItem(name=name, radius=self.radius, pos=pos, text=clue.text)
-                tile_data.graphics_item.delegate.right_clicked.connect(self.reason_cancel_clue)
+                if tile.clue in self.clues:
+                    clue = self.clues[tile.clue].clue
+                    tile_data.graphics_item = ReasonGraphicsItem(name=name, radius=self.radius, pos=pos, text=clue.text)
+                    tile_data.graphics_item.delegate.right_clicked.connect(self.reason_cancel_clue)
+                else:
+                    tile_data.graphics_item = ReasonGraphicsItem(name=name, radius=self.radius, pos=pos, text=None)
+                    # no need to connect
 
             elif isinstance(tile, ConnTile):
                 tile_data.graphics_item = ConnectGraphicsItem(name=name, radius=self.radius, pos=pos)
@@ -392,7 +396,11 @@ class InferWidget(QWidget):
         # release essential clues in the current stage
         for name, tile in self.current_infer_stage.tiles.items():
             if isinstance(tile, ReasonTile):
-                self.clues[tile.clue].used = False
+                if tile.clue in self.clues:
+                    self.clues[tile.clue].used = False
+                else:
+                    # infer stage lost a clue of the reason
+                    pass
 
         # set used flag to the clues of the current infer stages
         for light_up_reason in self.current_memo.light_up_reasons:
