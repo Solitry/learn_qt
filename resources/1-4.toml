@@ -48,7 +48,7 @@ show_rely = ["start"]
 [[AckTile]]
 name = "ack1"
 pos = [0, 4]
-next_stage = "2-1"
+next_stage = "1-2"
 show_rely = ["end"]
 
 [[ReasonTile]]

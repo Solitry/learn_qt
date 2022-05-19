@@ -62,11 +62,11 @@ class ScreenWidget(QWidget):
         self.switch_stage(prev_stage)
 
     def _prepare_stage_info(self) -> List[Union[Tuple[TextStage, TextMemo], Tuple[InferStage, InferMemo]]]:
-        already_exist_stage_name = set()
+        # already_exist_stage_name = set()
         ret = []
         for stage_name in self.records.history_stages:
-            if stage_name in already_exist_stage_name:
-                continue
+            # if stage_name in already_exist_stage_name:
+            #     continue
             ret.append((self.stage_pool.stages[stage_name], self.records.memo[stage_name]))
-            already_exist_stage_name.add(stage_name)
+            # already_exist_stage_name.add(stage_name)
         return ret
