@@ -1,19 +1,19 @@
 from PySide2.QtCore import Qt, QPointF, QObject, Signal
-from PySide2.QtGui import QColor, QPolygonF, QPen, QBrush
-from PySide2.QtWidgets import QGraphicsPolygonItem, QGraphicsTextItem, QGraphicsItem, QGraphicsSceneMouseEvent
+from PySide2.QtGui import QColor
+from PySide2.QtWidgets import QGraphicsItem, QGraphicsSceneMouseEvent
 from typing import Optional
-import math
 
 from .hexagon_graphics_item import HexagonGraphicsItem
 
 
 class ClueSignalDelegate(QObject):
-    drop = Signal(QPointF)
+    drop = Signal(str, QPointF)
 
 
 class ClueGraphicsItem(HexagonGraphicsItem):
-    def __init__(self, radius: float, pos: QPointF = QPointF(0, 0), text: Optional[str] = None, parent=None):
+    def __init__(self, name: str, radius: float, pos: QPointF = QPointF(0, 0), text: Optional[str] = None, parent=None):
         super().__init__(
+            name=name,
             radius=radius,
             status_list=[
                 (QColor("#EEFFCC99"), QColor("#EEFFCC99"), text),
@@ -45,5 +45,5 @@ class ClueGraphicsItem(HexagonGraphicsItem):
         if event.button() == Qt.LeftButton:
             self.setPos(self.init_pos)
             self.enter_status(0)
-            self.delegate.drop.emit(event.scenePos())
+            self.delegate.drop.emit(self.name, event.scenePos())
         super().mouseReleaseEvent(event)

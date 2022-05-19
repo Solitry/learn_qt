@@ -7,6 +7,7 @@ from typing import Optional, List, Tuple
 
 class HexagonGraphicsItem(QGraphicsPolygonItem):
     def __init__(self,
+                 name: str,
                  radius: float,
                  status_list: List[Tuple[QColor, QColor, Optional[str]]],
                  pos: QPointF = QPointF(0, 0),
@@ -15,6 +16,7 @@ class HexagonGraphicsItem(QGraphicsPolygonItem):
                  ):
         super().__init__(parent)
 
+        self.name = name
         self.radius = radius - 2
         self.status_list = status_list
 

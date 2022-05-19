@@ -68,11 +68,14 @@ class ConnTile(Tile):
 @dataclass
 class InferStage:
     name: str
+    rel_stages: List[str] = field(default_factory=list)
     tiles: Dict[str, Tile] = field(default_factory=dict)
 
     def load_from_file(self, path: str) -> None:
         with open(path, "r", encoding='utf8') as f:
             data = toml.load(f)
+
+        self.rel_stages = data["rel_stages"]
 
         for item in data["AsmTile"]:
             tile = AsmTile()

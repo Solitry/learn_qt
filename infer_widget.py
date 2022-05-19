@@ -1,10 +1,11 @@
 from PySide2.QtCore import Qt, Signal, QRectF, QPointF
 from PySide2.QtWidgets import QWidget, QHBoxLayout, QGraphicsScene, QGraphicsRectItem, QGraphicsItem, QGraphicsTextItem
-from PySide2.QtGui import QPen, QBrush, QColor
+from PySide2.QtGui import QBrush, QColor
 
-from typing import List, Union, Tuple, Optional, Any, Dict
+from typing import List, Union, Tuple, Optional, Any, Dict, cast
 from dataclasses import dataclass, field
 import math
+import collections
 
 from gui_class.fixed_graphics_view import FixedGraphicsView
 from gui_class.arrow_graphics_item import ArrowGraphicsItem
@@ -17,7 +18,7 @@ from gui_class.reason_graphics_item import ReasonGraphicsItem
 from gui_class.clue_graphics_item import ClueGraphicsItem
 
 from data_class.text_stage import TextStage, Clue
-from data_class.infer_stage import InferStage, AsmTile, AckTile, ReasonTile, ConnTile
+from data_class.infer_stage import InferStage, Tile, AsmTile, AckTile, ReasonTile, ConnTile
 from data_class.records import TextMemo, InferMemo
 
 
@@ -78,10 +79,11 @@ AllTilesGraphicsItem = Union[AckGraphicsItem, AssumeGraphicsItem, ConnectGraphic
 
 @dataclass
 class TileData:
-    name: str
+    tile: Tile
     show: bool = False
     light: bool = False
     graphics_item: Optional[AllTilesGraphicsItem] = None
+    link_tiles: List[str] = field(default_factory=list)
     extra: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -142,6 +144,7 @@ class InferWidget(QWidget):
         self.tiles = {}  # type: Dict[str, TileData]
         self.clues = {}  # type: Dict[str, ClueData]
 
+        self.current_infer_stage = None  # type: Optional[InferStage]
         self.current_memo = None  # type: Optional[InferMemo]
 
         self.text_stages = []  # type: List[Tuple[TextStage, TextMemo]]
@@ -158,11 +161,16 @@ class InferWidget(QWidget):
         self.main_scene.addItem(clue)
         clue.delegate.drop.connect(self.clue_drop)
 
-    def clue_drop(self, scene_pos: QPointF):
+    def clue_drop(self, name: str, scene_pos: QPointF):
         # print(scene_pos)
         for item in self.main_scene.items(scene_pos):
             if isinstance(item, ReasonGraphicsItem):
                 item.enter_status(1)
+        # TODO: drop clue on reason
+
+    def reason_cancel_clue(self, reason_name: str):
+        # TODO: cancel clue on reason
+        pass
 
     def switch_text_stage(self, delta: int):
         self.switch_to_target_text_stage(self.text_stage_idx + delta)
@@ -213,43 +221,47 @@ class InferWidget(QWidget):
             self.main_scene.removeItem(item.graphics_item)
         self.clues.clear()
 
-        # load text_stages
-        self.text_stages = []
-        for stage, memo in stage_info_list:
-            if isinstance(stage, TextStage):
-                self.text_stages.append((stage, memo))
+        # current stage
+        self.current_infer_stage, self.current_memo = stage_info_list[-1]  # type: InferStage, InferMemo
 
-        # load clues
+        # load clues & text stages
+        self.text_stages = []
+
         for stage, memo in stage_info_list:
             if isinstance(stage, TextStage):
+                if stage.name not in self.current_infer_stage.rel_stages:
+                    continue
+                # clues
                 for idx, clue in enumerate(stage.clues):
                     if idx >= 9:
                         raise IndexError("Not support more than 9 clues in 1 stage")
                     clue_data = ClueData(clue, belong_stage=stage.name)
-                    clue_data.graphics_item = ClueGraphicsItem(radius=self.radius, pos=self.CluePos[idx], text=clue.text)
+                    clue_data.graphics_item = \
+                        ClueGraphicsItem(name=clue.name, radius=self.radius, pos=self.CluePos[idx], text=clue.text)
                     clue_data.graphics_item.hide()
                     self.add_clue(clue_data.graphics_item)
                     self.clues[clue.name] = clue_data
+                # text stages
+                self.text_stages.append((stage, memo))
 
         # load tiles
-        current_infer_stage, self.current_memo = stage_info_list[-1]  # type: InferStage, InferMemo
-
-        for name, tile in current_infer_stage.tiles.items():
-            tile_data = TileData(name)
+        for name, tile in self.current_infer_stage.tiles.items():
+            tile_data = TileData(tile)
             pos = self._get_hexagon_pos(tile.pos.a, tile.pos.b)
 
             if isinstance(tile, AsmTile):
-                tile_data.graphics_item = AssumeGraphicsItem(radius=self.radius, pos=pos, text=tile.text)
+                tile_data.graphics_item = AssumeGraphicsItem(name=name, radius=self.radius, pos=pos, text=tile.text)
 
             elif isinstance(tile, AckTile):
-                tile_data.graphics_item = AckGraphicsItem(radius=self.radius, pos=pos)
+                tile_data.graphics_item = AckGraphicsItem(name=name, radius=self.radius, pos=pos)
 
             elif isinstance(tile, ReasonTile):
                 clue = self.clues[tile.clue].clue
-                tile_data.graphics_item = ReasonGraphicsItem(radius=self.radius, pos=pos, text=clue.text)
+                tile_data.graphics_item = ReasonGraphicsItem(name=name, radius=self.radius, pos=pos, text=clue.text)
+                tile_data.graphics_item.delegate.right_clicked.connect(self.reason_cancel_clue)
 
             elif isinstance(tile, ConnTile):
-                tile_data.graphics_item = ConnectGraphicsItem(radius=self.radius, pos=pos)
+                tile_data.graphics_item = ConnectGraphicsItem(name=name, radius=self.radius, pos=pos)
 
             else:
                 raise NotImplementedError("Not support tile type")
@@ -257,11 +269,122 @@ class InferWidget(QWidget):
             self.chess_board.add_tile(tile_data.graphics_item)
             self.tiles[name] = tile_data
         
-        # TODO: filter used/unused clues
-        # TODO: update all tiles status
+        # set used flag to the clues of the previous infer stages
+        for stage, memo in stage_info_list[:-1]:
+            if isinstance(stage, InferStage):
+                for light_up_reason in memo.light_up_reasons:
+                    reason_tile = cast(ReasonTile, stage.tiles[light_up_reason])
+                    self.clues[reason_tile.clue].used = True
 
-        # prapare dash board
+        # release essential clues in the current stage
+        for name, tile in self.current_infer_stage.tiles.items():
+            if isinstance(tile, ReasonTile):
+                self.clues[tile.clue].used = False
+
+        # set used flag to the clues of the current infer stages
+        for light_up_reason in self.current_memo.light_up_reasons:
+            reason_tile = cast(ReasonTile, self.current_infer_stage.tiles[light_up_reason])
+            self.clues[reason_tile.clue].used = True
+
+        # maintain link tiles
+        for name, tile_data in self.tiles.items():
+            for sr in tile_data.tile.show_rely:
+                self.tiles[sr].link_tiles.append(name)
+            if isinstance(tile_data.tile, AsmTile):
+                for lr in tile_data.tile.light_rely:
+                    self.tiles[lr].link_tiles.append(name)
+
+        # for name, tile_data in self.tiles.items():
+        #     print(name, ":")
+        #     for link in tile_data.link_tiles:
+        #         print("  ", link)
+
+        # light-up reasons & update all tiles status
+        for light_up_reason in self.current_memo.light_up_reasons:
+            self.tiles[light_up_reason].light = True
+        self.update_tiles_status(list(self.tiles))
+
+        # prepare dashboard
         self.switch_to_target_text_stage(len(self.text_stages) - 1)
 
     def _get_hexagon_pos(self, a, b) -> QPointF:
         return self.Origin + self.TileAxisA * (self.radius * a) + self.TileAxisB * (self.radius * b)
+
+    def update_tiles_status(self, changed_tiles):
+        q = collections.deque(changed_tiles)
+
+        while len(q) > 0:
+            tile_data = self.tiles[q[0]]
+            # print(tile_data.tile.name, ":", tile_data.show, tile_data.light)
+
+            if isinstance(tile_data.tile, AsmTile):
+                modified = self._update_asm_tile_status(tile_data)
+            elif isinstance(tile_data.tile, AckTile):
+                modified = self._update_ack_tile_status(tile_data)
+            elif isinstance(tile_data.tile, ReasonTile):
+                modified = self._update_reason_tile_status(tile_data)
+            elif isinstance(tile_data.tile, ConnTile):
+                modified = self._update_conn_tile_status(tile_data)
+            else:
+                raise NotImplementedError("Not support tile type")
+
+            if modified:
+                # print(" modify", tile_data.show, tile_data.light)
+                for link_tile in tile_data.link_tiles:
+                    if q.count(link_tile) == 0:
+                        q.append(link_tile)
+
+                # update graphics
+                if tile_data.show:
+                    tile_data.graphics_item.show()
+                else:
+                    tile_data.graphics_item.hide()
+
+                if tile_data.light:
+                    tile_data.graphics_item.enter_status(1)
+                else:
+                    tile_data.graphics_item.enter_status(0)
+
+            q.popleft()
+
+    def _update_asm_tile_status(self, tile_data: TileData) -> bool:
+        tile = cast(AsmTile, tile_data.tile)
+        new_show = len(tile.show_rely) == 0 or any([self.tiles[sr].light for sr in tile.show_rely])
+        new_light = all([self.tiles[lr].light for lr in tile.light_rely])
+
+        modified = new_show != tile_data.show or new_light != tile_data.light
+
+        tile_data.show = new_show
+        tile_data.light = new_light
+
+        return modified
+
+    def _update_ack_tile_status(self, tile_data: TileData) -> bool:
+        tile = cast(AckTile, tile_data.tile)
+        new_show = len(tile.show_rely) == 0 or any([self.tiles[sr].light for sr in tile.show_rely])
+
+        modified = new_show != tile_data.show
+
+        tile_data.show = new_show
+
+        return modified
+
+    def _update_reason_tile_status(self, tile_data: TileData) -> bool:
+        tile = cast(ReasonTile, tile_data.tile)
+        new_show = len(tile.show_rely) == 0 or any([self.tiles[sr].show for sr in tile.show_rely])
+
+        modified = new_show != tile_data.show
+
+        tile_data.show = new_show
+
+        return modified
+
+    def _update_conn_tile_status(self, tile_data: TileData) -> bool:
+        tile = cast(ConnTile, tile_data.tile)
+        new_show = len(tile.show_rely) == 0 or any([self.tiles[sr].light for sr in tile.show_rely])
+
+        modified = new_show != tile_data.show
+
+        tile_data.show = new_show
+
+        return modified

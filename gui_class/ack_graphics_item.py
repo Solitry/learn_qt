@@ -4,8 +4,9 @@ from .hexagon_graphics_item import HexagonGraphicsItem
 
 
 class AckGraphicsItem(HexagonGraphicsItem):
-    def __init__(self, radius: float, pos: QPointF = QPointF(0, 0), parent=None):
+    def __init__(self, name: str, radius: float, pos: QPointF = QPointF(0, 0), parent=None):
         super().__init__(
+            name=name,
             radius=radius,
             status_list=[
                 (QColor("#99A020F0"), QColor("#99A020F0"), None),

@@ -1,4 +1,4 @@
-from PySide2.QtCore import QPointF, Qt
+from PySide2.QtCore import QPointF, Qt, QObject, Signal
 from PySide2.QtWidgets import QGraphicsSceneMouseEvent
 from PySide2.QtGui import QColor
 from typing import Optional
@@ -6,9 +6,14 @@ from typing import Optional
 from .hexagon_graphics_item import HexagonGraphicsItem
 
 
+class ReasonSignalDelegate(QObject):
+    right_clicked = Signal(str)
+
+
 class ReasonGraphicsItem(HexagonGraphicsItem):
-    def __init__(self, radius: float, pos: QPointF = QPointF(0, 0), text: Optional[str] = None, parent=None):
+    def __init__(self, name: str, radius: float, pos: QPointF = QPointF(0, 0), text: Optional[str] = None, parent=None):
         super().__init__(
+            name=name,
             radius=radius,
             status_list=[
                 (QColor("#99FFE5CC"), QColor("#99FFE5CC"), None),
@@ -21,6 +26,8 @@ class ReasonGraphicsItem(HexagonGraphicsItem):
 
         self.setAcceptedMouseButtons(Qt.RightButton)
 
+        self.delegate = ReasonSignalDelegate()
+
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         if event.button() == Qt.RightButton:
             event.accept()
@@ -28,8 +35,5 @@ class ReasonGraphicsItem(HexagonGraphicsItem):
 
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         if event.button() == Qt.RightButton:
-            if self.get_status() == 1:
-                self.enter_status(0)
-            else:
-                self.enter_status(1)
+            self.delegate.right_clicked.emit(self.name)
         super().mouseReleaseEvent(event)
